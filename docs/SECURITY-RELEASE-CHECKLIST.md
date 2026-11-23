@@ -73,12 +73,16 @@ Observe the report-only CSP on the actual deployed site. Verify navigation, chec
 
 The following items remain outside this GitHub code-only pass and must be resolved before live checkout:
 
-1. Configure and test the production database connection. The local Prisma 7 validation/build report did not include a database connection test because no local `DATABASE_URL` was available.
-2. Bring the locally completed Prisma 7.10.1 migration and lockfile into the shared GitHub branch, then run CI against that exact dependency tree.
-3. Add a durable notification outbox/retry mechanism. Payment and enquiry emails are currently sent inline; a provider timeout can delay webhook acknowledgement or leave a saved enquiry without a delivered notification.
-4. Add a checkout idempotency key backed by a unique database constraint so repeated submissions cannot create multiple payment sessions for one client attempt.
-5. Run end-to-end Paystack test-mode scenarios, including duplicate and concurrent webhook deliveries.
-6. Confirm Vercel production and preview environment variables, trusted origins, Upstash connectivity and firewall rules.
+1. Create/link the `emaklr/digital-studio` Vercel project, connect the GitHub repository and use `main` as the production branch. This was not linked when last checked on 23 November 2026.
+2. Configure and test the intended PostgreSQL database connection from the deployed environment. The Prisma 7.10.1 upgrade, Prisma config, adapter and lockfile are now merged into `main`, and the PR and main CI runs passed. No real database connection test or production migration was performed during that upgrade.
+3. Configure and verify production Upstash Redis REST credentials, `NEXT_PUBLIC_SITE_URL`, exact `TRUSTED_ORIGINS`, and the required Vercel environment values.
+4. Configure Resend credentials and a verified sender identity; verify actual delivery to the studio notification inbox.
+5. Add a durable notification outbox/retry mechanism. Payment and enquiry emails are currently sent inline; a provider timeout can delay webhook acknowledgement or leave a saved enquiry without a delivered notification.
+6. Add checkout idempotency backed by a suitable database uniqueness constraint and concurrency-safe handling so repeated submissions cannot create multiple payment sessions for one intended checkout.
+7. Review webhook event processing and test duplicate/concurrent delivery and recovery. The payment transition is conditionally idempotent, but integration tests are still required.
+8. Run automated and end-to-end Paystack test-mode scenarios, including valid/invalid signatures, stale timestamps, key rotation, amount/currency/reference mismatches, duplicate webhooks and retries.
+9. Configure Vercel Firewall rules and observe report-only CSP violations against the real deployed site before considering CSP enforcement.
+10. Complete deployed-site smoke tests for all pages, enquiry flows and payment flows before any public launch.
 7. Keep `PAYMENTS_ENABLED` and `NEXT_PUBLIC_PAYMENTS_ENABLED` set to `false` until the above tests and manual checks pass.
 
 A clean dependency audit or a successful production build alone is not a security certification or a penetration test.
