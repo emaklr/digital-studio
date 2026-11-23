@@ -1,13 +1,13 @@
 import { services } from "@/lib/services";
 
-// Provisional deposit policy. Keep checkout disabled until these percentages and the FX rate
-// have been reviewed and explicitly approved for launch.
+// Approved fixed-package policy: 50% to begin, 50% before final handover.
+// Custom projects are quoted separately and use an agreed milestone schedule.
 export const depositPercentByService: Record<string, number> = {
   websites: 50,
-  ecommerce: 60,
-  "web-applications": 40,
-  automation: 70,
-  "ai-solutions": 60,
+  ecommerce: 50,
+  "web-applications": 50,
+  automation: 50,
+  "ai-solutions": 50,
 };
 
 export function getUsdNgnRate() {
