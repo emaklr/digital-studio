@@ -21,12 +21,12 @@ const ALLOWED_TIMELINES = new Set(["", "asap", "2-4-weeks", "1-3-months", "flexi
 
 export async function POST(request: NextRequest) {
   try {
-    const limited = await enforceRateLimit(request, "checkout-initialize", { limit: 5, windowSeconds: 600 });
-    if (limited) return limited;
-
     if (!isAllowedBrowserOrigin(request)) {
       return NextResponse.json({ error: "Invalid request origin." }, { status: 403 });
     }
+
+    const limited = await enforceRateLimit(request, "checkout-initialize", { limit: 5, windowSeconds: 600 });
+    if (limited) return limited;
     if (process.env.PAYMENTS_ENABLED !== "true") {
       return NextResponse.json({ error: "Online checkout is not enabled yet. Please submit a booking request instead." }, { status: 503 });
     }
