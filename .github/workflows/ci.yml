@@ -15,12 +15,19 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 26.13.1
+          cache: npm
       - name: Install dependencies
-        run: npm install
+        run: npm ci
+      - name: Audit dependencies
+        run: npm audit --audit-level=high
+      - name: Audit production dependency tree
+        run: npm audit --omit=dev --audit-level=high
+      - name: Validate Prisma schema
+        run: npm run db:validate
       - name: Generate Prisma client
-        run: npx prisma generate
-      - name: Typecheck
+        run: npm run db:generate
+      - name: Typecheck and generate Next.js route types
         run: npm run typecheck
       - name: Production build
         run: npm run build
