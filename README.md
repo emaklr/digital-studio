@@ -87,3 +87,8 @@ The implementation uses an atomic Redis Lua script through the Upstash REST API.
 
 ### Browser security headers
 The application sends HSTS, content-type, frame, referrer and permissions headers. A Content Security Policy is initially in report-only mode and must be observed against production pages before enforcement. Do not switch it to enforcing mode until all legitimate scripts, images, styles and payment flows have been verified.
+
+## Project documentation
+
+- [Project handoff and next steps](docs/PROJECT-HANDOFF.md) — current project status, completed work, branch/deployment state, known gaps and the continuation guide for future work sessions.
+- [Security release checklist](docs/SECURITY-RELEASE-CHECKLIST.md) — production environment configuration, security operations and the remaining launch gates.
