@@ -14,7 +14,8 @@ export default function InquiryForm({mode,initialService="",initialPackage=""}:P
  async function handleSubmit(event:FormEvent<HTMLFormElement>){
   event.preventDefault();setStatus("sending");setMessage("");
   const form=event.currentTarget;
-  const payload=Object.fromEntries(new FormData(form).entries()) as Record<string,string>;
+  const payload:Record<string,string>={};
+  new FormData(form).forEach((value,key)=>{if(typeof value==="string")payload[key]=value;});
   payload.kind=mode;
   try{
    if(mode==="booking"&&paymentsEnabled){
