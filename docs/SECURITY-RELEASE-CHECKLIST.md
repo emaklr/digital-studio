@@ -73,8 +73,8 @@ Observe the report-only CSP on the actual deployed site. Verify navigation, chec
 
 The following items remain outside this GitHub code-only pass and must be resolved before live checkout:
 
-1. Create/link the `emaklr/digital-studio` Vercel project, connect the GitHub repository and use `main` as the production branch. This was not linked when last checked on 23 November 2026.
-2. Configure and test the intended PostgreSQL database connection from the deployed environment. The Prisma 7.10.1 upgrade, Prisma config, adapter and lockfile are now merged into `main`, and the PR and main CI runs passed. No real database connection test or production migration was performed during that upgrade.
+1. Create/link the `emaklr/digital-studio` Vercel project, connect the GitHub repository and use `main` as the production branch. The connected Vercel identity can inspect the team but project creation returned 403 Forbidden for the available `seun's projects` team. Resolve team permissions or create/import the project manually before proceeding.
+2. Inspect the intended Neon project/branch and its existing schema/migration history, then configure and test the intended PostgreSQL connection from the deployed environment. The Neon project/database actions were unavailable in the 23 November work session, so no branch was queried and no connection string was retrieved. The Prisma 7.10.1 upgrade, Prisma config, adapter and lockfile are now merged into `main`, and CI passed. A read-only `GET /api/health` endpoint now runs `SELECT 1` in the deployed runtime. No production migration has been performed.
 3. Configure and verify production Upstash Redis REST credentials, `NEXT_PUBLIC_SITE_URL`, exact `TRUSTED_ORIGINS`, and the required Vercel environment values.
 4. Configure Resend credentials and a verified sender identity; verify actual delivery to the studio notification inbox.
 5. Add a durable notification outbox/retry mechanism. Payment and enquiry emails are currently sent inline; a provider timeout can delay webhook acknowledgement or leave a saved enquiry without a delivered notification.

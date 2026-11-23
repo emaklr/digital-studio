@@ -146,17 +146,20 @@ For all new work, branch from the current main, e.g. feat/<short-description>, f
 
 ### Vercel
 
-As checked on 23 November 2026, the Vercel team did **not** have a digital-studio project linked to this GitHub repository. The team search showed other projects (including Ritewheel and Weemove), but no Abeeb Digital Studio project. Therefore, merging PR #2 did not trigger a Vercel deployment for this site.
+As checked on 23 November 2026, the Vercel team did **not** have an Abeeb Digital Studio project linked to this GitHub repository. The team search showed other projects (including Ritewheel and Weemove), but no Abeeb Digital Studio project. A project-create attempt under the available team returned **403 Forbidden: no permission to create the project**. The connected account can read the team/project list but cannot complete project creation through the current connection. No deployment was created.
 
-Next deployment action: import/link emaklr/digital-studio in the intended Vercel team, use main as the production branch, verify the build settings, and configure the environment variables below. Re-check the Vercel project list after linking; do not assume deployment is configured until an actual deployment is visible and the deployed URL is tested.
+Next deployment action: either grant the connected Vercel identity the required project-creation permission in the intended team, or create/import the project manually in Vercel. Connect `emaklr/digital-studio`, use `main` as the production branch, verify the Next.js build settings, and configure the environment variables below. Do not assume deployment is configured until the project is visible, a deployment is READY and the deployed URL is tested.
 
 ### Database
 
 - The app uses PostgreSQL through Prisma 7 and the @prisma/adapter-pg driver adapter.
-- DATABASE_URL is required at runtime.
-- No database connection test was performed during the local upgrade because no local DATABASE_URL was available.
-- No production migration was run as part of the code upgrade.
-- Confirm the correct database, credentials, networking/SSL requirements and migration history before executing npm run db:migrate (which runs prisma migrate deploy).
+- `DATABASE_URL` is required at runtime.
+- A minimal read-only runtime connectivity endpoint is now merged at `GET /api/health`. It executes `SELECT 1`, returns HTTP 200 only on success, and returns HTTP 503 when the URL is missing or the connection fails. It never returns credentials, hostnames or raw driver errors.
+- PR #6 adding the health endpoint passed PR CI and the post-merge `main` workflow.
+- No actual database connection test has been completed because the Neon project/branch could not be inspected or queried in this work session. The available Neon project/database actions returned a tool-unavailable error, so no connection string was retrieved and no database was changed.
+- No production migration was run. The repository currently contains one initial migration at `prisma/migrations/202611230001_init/migration.sql`, creating `Inquiry`, `Payment` and `WebhookEvent` and their indexes/foreign key.
+- Before applying it, inspect the target database's `_prisma_migrations` and table state. If it already has these tables but has no matching migration history, do not blindly run the initial migration; resolve/adopt the migration history safely.
+- Confirm the correct database, credentials, networking/SSL requirements and migration history before executing `npm run db:migrate` (which runs `prisma migrate deploy`).
 
 ### Upstash Redis
 
