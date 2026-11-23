@@ -1,5 +1,6 @@
 import "server-only";
 import { createHash } from "node:crypto";
+import { isIP } from "node:net";
 import { NextRequest, NextResponse } from "next/server";
 
 const RATE_LIMIT_SCRIPT = [
@@ -20,12 +21,20 @@ type UpstashResponse = {
 };
 
 function getClientAddress(request: NextRequest): string | null {
-  const direct = request.headers.get("x-real-ip")?.trim();
-  if (direct) return direct.slice(0, 100);
+  // Vercel overwrites X-Forwarded-For at its edge. Prefer its platform header
+  // when present, especially when the deployment sits behind an additional proxy.
+  const candidates = [
+    request.headers.get("x-vercel-forwarded-for"),
+    request.headers.get("x-real-ip"),
+    request.headers.get("x-forwarded-for"),
+  ];
 
-  const forwarded = request.headers.get("x-forwarded-for");
-  const lastAddress = forwarded?.split(",").at(-1)?.trim();
-  return lastAddress ? lastAddress.slice(0, 100) : null;
+  for (const header of candidates) {
+    if (!header) continue;
+    const firstAddress = header.split(",")[0]?.trim();
+    if (firstAddress && isIP(firstAddress)) return firstAddress;
+  }
+  return null;
 }
 
 /**
