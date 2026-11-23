@@ -83,7 +83,7 @@ The following items remain outside this GitHub code-only pass and must be resolv
 8. Run automated and end-to-end Paystack test-mode scenarios, including valid/invalid signatures, stale timestamps, key rotation, amount/currency/reference mismatches, duplicate webhooks and retries.
 9. Configure Vercel Firewall rules and observe report-only CSP violations against the real deployed site before considering CSP enforcement.
 10. Complete deployed-site smoke tests for all pages, enquiry flows and payment flows before any public launch.
-7. Keep `PAYMENTS_ENABLED` and `NEXT_PUBLIC_PAYMENTS_ENABLED` set to `false` until the above tests and manual checks pass.
+Keep `PAYMENTS_ENABLED` and `NEXT_PUBLIC_PAYMENTS_ENABLED` set to `false` until the above tests and manual checks pass.
 
 A clean dependency audit or a successful production build alone is not a security certification or a penetration test.
 
