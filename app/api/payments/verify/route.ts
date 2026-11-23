@@ -9,15 +9,17 @@ import { enforceRateLimit } from "@/lib/rate-limit";
 
 const REFERENCE_PATTERN = /^ADS-[A-Za-z0-9-]{20,80}$/;
 
-function successResponse(payment: {
-  packageName: string | null;
+type VerifiedPaymentSummary = {
+  inquiry: { packageName: string | null };
   depositUsd: number;
   amountNgnKobo: number;
-}) {
+};
+
+function successResponse(payment: VerifiedPaymentSummary) {
   return NextResponse.json(
     {
       status: "success",
-      packageName: payment.packageName,
+      packageName: payment.inquiry.packageName,
       depositUsd: payment.depositUsd,
       amountNgnKobo: payment.amountNgnKobo,
     },
@@ -33,6 +35,7 @@ export async function POST(request: NextRequest) {
 
     const limited = await enforceRateLimit(request, "payment-verification", { limit: 12, windowSeconds: 300 });
     if (limited) return limited;
+
     if (!process.env.PAYSTACK_SECRET_KEY || !process.env.DATABASE_URL) {
       return NextResponse.json({ error: "Payment verification is not configured." }, { status: 503 });
     }
@@ -42,12 +45,16 @@ export async function POST(request: NextRequest) {
     if (Object.keys(parsed.value).some((key) => key !== "reference")) {
       return NextResponse.json({ error: "Request contains unsupported fields." }, { status: 400 });
     }
+
     const reference = typeof parsed.value.reference === "string" ? parsed.value.reference.trim() : "";
     if (!REFERENCE_PATTERN.test(reference)) {
       return NextResponse.json({ error: "Invalid payment reference." }, { status: 400 });
     }
 
-    const payment = await prisma.payment.findUnique({ where: { reference } });
+    const payment = await prisma.payment.findUnique({
+      where: { reference },
+      include: { inquiry: { select: { packageName: true } } },
+    });
     if (!payment) {
       return NextResponse.json({ error: "We could not find this booking." }, { status: 404 });
     }
@@ -84,7 +91,10 @@ export async function POST(request: NextRequest) {
     }
 
     await markPaymentPaid(reference);
-    const updated = await prisma.payment.findUnique({ where: { reference } });
+    const updated = await prisma.payment.findUnique({
+      where: { reference },
+      include: { inquiry: { select: { packageName: true } } },
+    });
     if (!updated || updated.status !== "PAID") {
       return NextResponse.json({ error: "Payment confirmation is still processing. Please retry shortly." }, { status: 503 });
     }
