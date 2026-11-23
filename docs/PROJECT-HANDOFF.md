@@ -3,7 +3,7 @@
 > **Last updated:** 23 November 2026  
 > **Repository:** [emaklr/digital-studio](https://github.com/emaklr/digital-studio)  
 > **Source of truth:** main  
-> **Current main commit:** 34a821f3973bdbe1699eecec6e807f88fb057f1b — Security hardening and Prisma 7 upgrade
+> **Application-code baseline checked for this handoff:** 34a821f3973bdbe1699eecec6e807f88fb057f1b — the PR #2 security/Prisma merge. The handoff and checklist were subsequently added by [PR #3](https://github.com/emaklr/digital-studio/pull/3), merged as commit f4172c29302943f1573b61985ebf08a7d55bdfb4. Re-check the live main head before starting new work.
 
 This document is the continuity record for future work sessions. Read it together with [README.md](../README.md) and [SECURITY-RELEASE-CHECKLIST.md](./SECURITY-RELEASE-CHECKLIST.md) before making changes. Update this document whenever meaningful work is completed, a deployment changes status, or a new blocker is discovered.
 
@@ -136,9 +136,9 @@ The local validation report also recorded successful npm ci, Prisma validation/g
 
 ### Important branch warning
 
-The security PR was squash-merged. Its old branch security/production-hardening still points to the pre-squash PR head f33e6b2eb616264f2e96e35610708ec69553c6db; comparing that branch with main shows divergent history even though its delivered code is now present in the squash merge. **Do not merge that old branch again.**
+The security PR was squash-merged. Its old branch security/production-hardening still points to the pre-squash PR head f33e6b2eb616264f2e96e35610708ec69553c6db; the comparison against the code baseline above showed divergent history even though its delivered code is now present in the squash merge. The divergence counts can change as main advances. **Do not merge that old branch again.**
 
-The original feat/abeeb-studio-website branch currently compares to main as **1 commit ahead and 2 behind**. The Prisma 7 files that mattered from it were incorporated into PR #2 and are already on main. Do not force-push, reset, or delete either old branch without first inspecting the diff and confirming it is safe.
+The original feat/abeeb-studio-website branch compared to main as **1 commit ahead and 2 behind** when checked against the code baseline above, before PR #3 added the documentation commits. The current ahead/behind count may therefore have changed; re-run the comparison before using that branch. The Prisma 7 files that mattered from it were incorporated into PR #2 and are already on main. Do not force-push, reset, or delete either old branch without first inspecting the diff and confirming it is safe.
 
 For all new work, branch from the current main, e.g. feat/<short-description>, fix/<short-description> or docs/<short-description>, open a PR to main, wait for CI, review the diff, and merge only when consistent.
 
