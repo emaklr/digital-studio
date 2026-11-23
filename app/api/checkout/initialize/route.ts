@@ -3,46 +3,70 @@ import { randomUUID } from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import { calculateDeposit, depositPercentByService, getPackage, getUsdNgnRate } from "@/lib/payment-config";
 import { sendStudioEmail, escapeHtml } from "@/lib/notifications";
+import {
+  cleanText,
+  getTrustedSiteUrl,
+  isAllowedBrowserOrigin,
+  isOptionalHttpUrl,
+  isValidEmail,
+  readJsonObject,
+} from "@/lib/request-security";
+import { enforceRateLimit } from "@/lib/rate-limit";
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const clean = (value: unknown, max = 300) =>
-  typeof value === "string" ? value.trim().replace(/[\u0000-\u001f\u007f]/g, "").slice(0, max) : "";
+const ALLOWED_FIELDS = new Set([
+  "name", "email", "company", "website", "kind", "service", "package",
+  "timeline", "details", "company_website",
+]);
+const ALLOWED_TIMELINES = new Set(["", "asap", "2-4-weeks", "1-3-months", "flexible"]);
 
 export async function POST(request: NextRequest) {
   try {
+    const limited = await enforceRateLimit(request, "checkout-initialize", { limit: 5, windowSeconds: 600 });
+    if (limited) return limited;
+
+    if (!isAllowedBrowserOrigin(request)) {
+      return NextResponse.json({ error: "Invalid request origin." }, { status: 403 });
+    }
     if (process.env.PAYMENTS_ENABLED !== "true") {
       return NextResponse.json({ error: "Online checkout is not enabled yet. Please submit a booking request instead." }, { status: 503 });
     }
     if (!process.env.DATABASE_URL) {
       return NextResponse.json({ error: "Booking storage is not configured yet." }, { status: 503 });
     }
+
     const secretKey = process.env.PAYSTACK_SECRET_KEY;
     const usdNgnRate = getUsdNgnRate();
-    if (!secretKey || !usdNgnRate) {
+    const siteUrl = getTrustedSiteUrl(request);
+    if (!secretKey || !usdNgnRate || !siteUrl) {
       return NextResponse.json({ error: "Checkout configuration is incomplete. Please contact the studio." }, { status: 503 });
     }
 
-    const origin = request.headers.get("origin");
-    if (origin && origin !== new URL(request.url).origin) {
-      return NextResponse.json({ error: "Invalid request origin." }, { status: 403 });
+    const parsed = await readJsonObject(request, 12_000);
+    if (!parsed.ok) return parsed.response;
+    const payload = parsed.value;
+    const unknownFields = Object.keys(payload).filter((key) => !ALLOWED_FIELDS.has(key));
+    if (unknownFields.length > 0) {
+      return NextResponse.json({ error: "Request contains unsupported fields." }, { status: 400 });
     }
-    const contentLength = Number(request.headers.get("content-length") ?? 0);
-    if (contentLength > 12000) return NextResponse.json({ error: "Request is too large." }, { status: 413 });
+    if (cleanText(payload.company_website, 200)) return NextResponse.json({ ok: true });
 
-    const payload = await request.json();
-    if (clean(payload.company_website, 200)) return NextResponse.json({ ok: true });
+    const name = cleanText(payload.name, 100);
+    const email = cleanText(payload.email, 180).toLowerCase();
+    const company = cleanText(payload.company, 140);
+    const website = cleanText(payload.website, 250);
+    const details = cleanText(payload.details, 4000);
+    const timeline = cleanText(payload.timeline, 80);
+    const serviceSlug = cleanText(payload.service, 80);
+    const packageName = cleanText(payload.package, 120);
 
-    const name = clean(payload.name, 100);
-    const email = clean(payload.email, 180).toLowerCase();
-    const company = clean(payload.company, 140);
-    const website = clean(payload.website, 250);
-    const details = clean(payload.details, 4000);
-    const timeline = clean(payload.timeline, 80);
-    const serviceSlug = clean(payload.service, 80);
-    const packageName = clean(payload.package, 120);
-
-    if (!name || !EMAIL_PATTERN.test(email) || details.length < 20) {
-      return NextResponse.json({ error: "Please provide a valid name, email and project description." }, { status: 400 });
+    if (payload.kind !== "booking" || !name || !isValidEmail(email) || details.length < 20) {
+      return NextResponse.json({ error: "Please provide a valid booking name, email and project description." }, { status: 400 });
+    }
+    if (!isOptionalHttpUrl(website)) {
+      return NextResponse.json({ error: "Enter a valid website URL using HTTP or HTTPS." }, { status: 400 });
+    }
+    if (!ALLOWED_TIMELINES.has(timeline)) {
+      return NextResponse.json({ error: "Choose a valid project timeline." }, { status: 400 });
     }
 
     const selection = getPackage(serviceSlug, packageName);
@@ -58,8 +82,6 @@ export async function POST(request: NextRequest) {
     }
 
     const reference = `ADS-${randomUUID().replace(/-/g, "")}`;
-    const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || request.nextUrl.origin).replace(/\/$/, "");
-
     const inquiry = await prisma.inquiry.create({
       data: {
         name, email, company: company || null, website: website || null,
@@ -99,6 +121,7 @@ export async function POST(request: NextRequest) {
         },
       }),
       cache: "no-store",
+      signal: AbortSignal.timeout(10_000),
     });
 
     const result = await paystackResponse.json().catch(() => null);
@@ -120,14 +143,12 @@ export async function POST(request: NextRequest) {
       html: `<h2>New service booking checkout</h2><p><b>${escapeHtml(name)}</b> (${escapeHtml(email)}) selected <b>${escapeHtml(service.title)} / ${escapeHtml(packageName)}</b>.</p><p>Package: $${selectedPackage.price} USD<br/>Deposit: $${depositUsd} USD (${depositPercent}%)<br/>FX rate: ₦${usdNgnRate.toLocaleString("en-NG")} per USD<br/>Checkout amount: ${naira}</p><p>${escapeHtml(details)}</p><p>Reference: ${reference}</p>`,
     });
 
-    return NextResponse.json({
-      ok: true,
-      authorizationUrl,
-      reference,
-      quote: { packagePriceUsd: selectedPackage.price, depositPercent, depositUsd, usdNgnRate, amountNgnKobo },
-    });
+    return NextResponse.json(
+      { ok: true, authorizationUrl, reference },
+      { headers: { "Cache-Control": "no-store" } },
+    );
   } catch (error) {
-    console.error("Checkout initialization error", error);
+    console.error("Checkout initialization error", error instanceof Error ? error.message : "Unknown error");
     return NextResponse.json({ error: "We could not start checkout. Please try again or contact the studio." }, { status: 500 });
   }
 }
