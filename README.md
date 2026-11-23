@@ -24,12 +24,17 @@ International digital solutions studio offering websites, e-commerce, web applic
 
 ## Local setup
 ```bash
-npm install
+npm ci
 cp .env.example .env.local
-npx prisma generate
-npx prisma migrate deploy
+npm run db:validate
+npm run db:generate
 npm run dev
 ```
+
+Prisma 7 uses the PostgreSQL driver adapter configured in `lib/prisma.ts` and the schema/migration configuration in `prisma.config.ts`. The generated Prisma client is written to `generated/prisma` and is created during installation; it is intentionally ignored by Git.
+
+Run `npm run db:migrate` only after confirming `DATABASE_URL` points to the intended development database. Never use the local setup instructions to apply migrations to production without a reviewed deployment plan.
+
 
 ## Environment
 - `DATABASE_URL`: PostgreSQL connection string.
@@ -61,3 +66,24 @@ Enable international payments in Paystack Dashboard after the account's complian
 - Payment checkout is disabled by default.
 - Custom-project milestone terms must be written into the approved proposal before kickoff.
 - FixTrust and Ritewheel are labelled as studio-owned products in development, not completed client case studies.
+
+
+## Application security configuration
+
+### Required production environment
+- `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`: server-only Upstash Redis REST credentials used by distributed rate limits. Do not expose either with a `NEXT_PUBLIC_` prefix.
+- `TRUSTED_ORIGINS`: comma-separated canonical HTTPS origins allowed to submit browser forms and request payment verification. Include the production site origin and any explicitly trusted preview origins.
+- `NEXT_PUBLIC_SITE_URL`: canonical HTTPS site URL used for payment callbacks. Production checkout does not fall back to a request Host header.
+- `PAYSTACK_WEBHOOK_SECRET_PREVIOUS`: optional previous webhook signing secret during a configured Paystack signing-secret rotation. Remove it after the overlap period ends.
+
+The public enquiry, checkout initialization and payment verification APIs fail closed in production when Upstash rate-limiting configuration is missing or unavailable. Local development can run without Upstash configuration.
+
+### Rate limits
+- Enquiries: 5 requests per IP per 15 minutes.
+- Checkout initialization: 5 requests per IP per 10 minutes.
+- Payment verification: 12 requests per IP per 5 minutes.
+
+The implementation uses an atomic Redis Lua script through the Upstash REST API. Add a Vercel Firewall rule as a second layer of protection. For the Paystack webhook, restrict requests to Paystack's published webhook IP addresses where the hosting firewall supports it; do not apply browser-origin checks to webhook traffic.
+
+### Browser security headers
+The application sends HSTS, content-type, frame, referrer and permissions headers. A Content Security Policy is initially in report-only mode and must be observed against production pages before enforcement. Do not switch it to enforcing mode until all legitimate scripts, images, styles and payment flows have been verified.
