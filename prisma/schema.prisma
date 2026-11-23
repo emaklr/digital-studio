@@ -1,0 +1,55 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Inquiry {
+  id          String    @id @default(cuid())
+  name        String
+  email       String
+  company     String?
+  website     String?
+  kind        String
+  serviceSlug String?
+  packageName String?
+  budget      String?
+  timeline    String?
+  details     String
+  createdAt   DateTime  @default(now())
+  payments    Payment[]
+}
+
+model Payment {
+  id               String   @id @default(cuid())
+  inquiryId        String
+  inquiry          Inquiry  @relation(fields: [inquiryId], references: [id], onDelete: Restrict)
+  reference        String   @unique
+  amountNgnKobo    Int
+  currency         String   @default("NGN")
+  packagePriceUsd  Int
+  depositPercent   Int
+  depositUsd       Int
+  usdNgnRate       Decimal  @db.Decimal(14, 4)
+  status           String   @default("INITIALIZING")
+  authorizationUrl String?
+  paidAt           DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([inquiryId])
+  @@index([status, createdAt])
+}
+
+model WebhookEvent {
+  id        String   @id @default(cuid())
+  eventKey  String   @unique
+  eventType String
+  reference String
+  createdAt DateTime @default(now())
+
+  @@index([reference])
+}
