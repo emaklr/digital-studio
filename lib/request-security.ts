@@ -165,3 +165,71 @@ export function getTrustedSiteUrl(request: NextRequest): string | null {
     return null;
   }
 }
+
+export type RawBodyResult =
+  | { ok: true; value: Buffer }
+  | { ok: false; response: NextResponse };
+
+export async function readRawBody(
+  request: NextRequest,
+  maxBytes = 1_000_000,
+): Promise<RawBodyResult> {
+  const contentType = request.headers.get("content-type") ?? "";
+  if (!/^application\/json(?:\s*;|$)/i.test(contentType)) {
+    return {
+      ok: false,
+      response: NextResponse.json({ error: "Content-Type must be application/json." }, { status: 415 }),
+    };
+  }
+
+  const declaredLength = request.headers.get("content-length");
+  if (declaredLength !== null) {
+    if (!/^\d+$/.test(declaredLength)) {
+      return {
+        ok: false,
+        response: NextResponse.json({ error: "Invalid Content-Length header." }, { status: 400 }),
+      };
+    }
+    if (Number(declaredLength) > maxBytes) {
+      return {
+        ok: false,
+        response: NextResponse.json({ error: "Payload too large." }, { status: 413 }),
+      };
+    }
+  }
+
+  if (!request.body) {
+    return {
+      ok: false,
+      response: NextResponse.json({ error: "A request body is required." }, { status: 400 }),
+    };
+  }
+
+  const reader = request.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let totalBytes = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      totalBytes += value.byteLength;
+      if (totalBytes > maxBytes) {
+        await reader.cancel();
+        return {
+          ok: false,
+          response: NextResponse.json({ error: "Payload too large." }, { status: 413 }),
+        };
+      }
+      chunks.push(value);
+    }
+  } catch {
+    return {
+      ok: false,
+      response: NextResponse.json({ error: "Unable to read request body." }, { status: 400 }),
+    };
+  } finally {
+    reader.releaseLock();
+  }
+
+  return { ok: true, value: Buffer.concat(chunks.map((chunk) => Buffer.from(chunk))) };
+}
