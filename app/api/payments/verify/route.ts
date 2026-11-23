@@ -27,18 +27,21 @@ function successResponse(payment: {
 
 export async function POST(request: NextRequest) {
   try {
-    const limited = await enforceRateLimit(request, "payment-verification", { limit: 12, windowSeconds: 300 });
-    if (limited) return limited;
-
     if (!isAllowedBrowserOrigin(request)) {
       return NextResponse.json({ error: "Invalid request origin." }, { status: 403 });
     }
+
+    const limited = await enforceRateLimit(request, "payment-verification", { limit: 12, windowSeconds: 300 });
+    if (limited) return limited;
     if (!process.env.PAYSTACK_SECRET_KEY || !process.env.DATABASE_URL) {
       return NextResponse.json({ error: "Payment verification is not configured." }, { status: 503 });
     }
 
     const parsed = await readJsonObject(request, 2_048);
     if (!parsed.ok) return parsed.response;
+    if (Object.keys(parsed.value).some((key) => key !== "reference")) {
+      return NextResponse.json({ error: "Request contains unsupported fields." }, { status: 400 });
+    }
     const reference = typeof parsed.value.reference === "string" ? parsed.value.reference.trim() : "";
     if (!REFERENCE_PATTERN.test(reference)) {
       return NextResponse.json({ error: "Invalid payment reference." }, { status: 400 });
