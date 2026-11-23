@@ -82,3 +82,17 @@ The following items remain outside this GitHub code-only pass and must be resolv
 7. Keep `PAYMENTS_ENABLED` and `NEXT_PUBLIC_PAYMENTS_ENABLED` set to `false` until the above tests and manual checks pass.
 
 A clean dependency audit or a successful production build alone is not a security certification or a penetration test.
+
+
+## Prisma 7 and Node runtime
+
+- Local and CI runtime: Node.js 26.13.1, with npm 11.20.0.
+- Prisma CLI and Prisma Client: 7.10.1.
+- PostgreSQL driver adapter: `@prisma/adapter-pg` 7.10.1.
+- Prisma client generation output: `generated/prisma` (ignored; regenerated during install/build).
+- `prisma.config.ts` loads local environment files for CLI usage and defines the schema and migrations paths.
+- The dependency lockfile pins `deepmerge-ts` 8.0.2 and applies a scoped Prisma Config override to `effect` 3.22.5.
+
+The local validation report recorded clean full and production dependency audits, Prisma schema validation, client generation, TypeScript checking and production build. CI repeats those checks against the committed lockfile.
+
+No database connection test was run during the local upgrade because no local `DATABASE_URL` was available. A successful Prisma schema validation is not evidence that the deployed database connection works.
