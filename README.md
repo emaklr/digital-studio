@@ -24,12 +24,17 @@ International digital solutions studio offering websites, e-commerce, web applic
 
 ## Local setup
 ```bash
-npm install
+npm ci
 cp .env.example .env.local
-npx prisma generate
-npx prisma migrate deploy
+npm run db:validate
+npm run db:generate
 npm run dev
 ```
+
+Prisma 7 uses the PostgreSQL driver adapter configured in `lib/prisma.ts` and the schema/migration configuration in `prisma.config.ts`. The generated Prisma client is written to `generated/prisma` and is created during installation; it is intentionally ignored by Git.
+
+Run `npm run db:migrate` only after confirming `DATABASE_URL` points to the intended development database. Never use the local setup instructions to apply migrations to production without a reviewed deployment plan.
+
 
 ## Environment
 - `DATABASE_URL`: PostgreSQL connection string.
