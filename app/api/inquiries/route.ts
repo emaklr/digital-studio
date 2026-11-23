@@ -21,12 +21,12 @@ const CUSTOM_SERVICE_AREAS = new Set(["website", "application", "automation", "a
 
 export async function POST(request: NextRequest) {
   try {
-    const limited = await enforceRateLimit(request, "inquiries", { limit: 5, windowSeconds: 900 });
-    if (limited) return limited;
-
     if (!isAllowedBrowserOrigin(request)) {
       return NextResponse.json({ error: "Invalid request origin." }, { status: 403 });
     }
+
+    const limited = await enforceRateLimit(request, "inquiries", { limit: 5, windowSeconds: 900 });
+    if (limited) return limited;
 
     if (!process.env.DATABASE_URL) {
       return NextResponse.json({ error: "Enquiry storage is not configured yet." }, { status: 503 });
