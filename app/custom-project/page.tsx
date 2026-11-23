@@ -1,0 +1,6 @@
+import type {Metadata} from "next";
+import InquiryForm from "@/components/inquiry-form";
+export const metadata:Metadata={title:"Custom solutions",description:"Tell us about a business challenge that needs a custom digital solution."};
+export default function CustomProjectPage(){
+ return <div className="page-shell"><section className="form-page shell custom-form-page"><div className="form-page-intro"><span className="eyebrow"><span className="eyebrow-dot"></span> Custom solutions</span><h1>Got a different<br/><span className="gradient-text">kind of challenge?</span></h1><p>Not every business fits a package. Share what you’re trying to solve and we’ll help shape the right solution, scope and next step.</p><div className="custom-points"><div><b>01</b><span>Tell us the problem, not just the feature list.</span></div><div><b>02</b><span>We’ll review the context and ask the right questions.</span></div><div><b>03</b><span>You’ll receive a tailored scope and proposal.</span></div></div></div><div className="form-panel"><div className="form-panel-head"><span className="eyebrow">Custom project brief</span><span className="secure-note">✳ No obligation</span></div><InquiryForm mode="custom"/></div></section></div>;
+}
