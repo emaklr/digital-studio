@@ -92,3 +92,12 @@ The application sends HSTS, content-type, frame, referrer and permissions header
 
 - [Project handoff and next steps](docs/PROJECT-HANDOFF.md) — current project status, completed work, branch/deployment state, known gaps and the continuation guide for future work sessions.
 - [Security release checklist](docs/SECURITY-RELEASE-CHECKLIST.md) — production environment configuration, security operations and the remaining launch gates.
+
+
+## Approved visual direction
+
+The approved homepage concept is stored in [docs/design-reference/approved-homepage.md](docs/design-reference/approved-homepage.md), with the visual reference at `docs/design-reference/abeeb-approved-homepage.webp`. The extracted architectural hero photograph used by the homepage is stored at `public/images/abeeb-studio-hero.webp`.
+
+The redesign uses a light, editorial layout, white service and pricing cards, deep navy sections, and a restrained royal/electric-blue accent drawn from the AB mark. Do not add decorative arrow glyphs to navigation, cards, buttons or links. Keep the interaction feedback measured and accessible, including reduced-motion support.
+
+The website-package UI is connected to `lib/services.ts`. Those canonical package prices currently remain in USD because checkout calculation and Paystack initialization depend on that existing pricing model. Do not replace the displayed amounts with naira values unless the canonical service prices and checkout calculation are updated together.
