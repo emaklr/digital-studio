@@ -3,7 +3,7 @@
 International digital solutions studio offering websites, e-commerce, web applications, AI integrations and business automation.
 
 ## Direction
-- Visual identity: dark premium with bold creative accents.
+- Visual identity: premium editorial white surfaces, deep navy sections and restrained royal/sky-blue accents.
 - Displayed starting prices: USD.
 - Target market: international businesses.
 - Sales model: fixed service packages plus custom project enquiries.
@@ -96,8 +96,6 @@ The application sends HSTS, content-type, frame, referrer and permissions header
 
 ## Approved visual direction
 
-The approved homepage concept is stored in [docs/design-reference/approved-homepage.md](docs/design-reference/approved-homepage.md), with the visual reference at `docs/design-reference/abeeb-approved-homepage.webp`. The extracted architectural hero photograph used by the homepage is stored at `public/images/abeeb-studio-hero.webp`.
+The approved desktop and mobile homepage reference is stored in [docs/design-reference/abeeb-approved-homepage.webp](docs/design-reference/abeeb-approved-homepage.webp), with responsive design rules in [docs/design-reference/approved-homepage.md](docs/design-reference/approved-homepage.md). The hero software dashboard is implemented as real React and CSS/SVG components in `components/hero-dashboard.tsx`; it is not a flattened screenshot or background image.
 
-The redesign uses a light, editorial layout, white service and pricing cards, deep navy sections, and a restrained royal/electric-blue accent drawn from the AB mark. Do not add decorative arrow glyphs to navigation, cards, buttons or links. Keep the interaction feedback measured and accessible, including reduced-motion support.
-
-The website-package UI is connected to `lib/services.ts`. Those canonical package prices currently remain in USD because checkout calculation and Paystack initialization depend on that existing pricing model. Do not replace the displayed amounts with naira values unless the canonical service prices and checkout calculation are updated together.
+The website package UI uses canonical values from `lib/services.ts` (USD). Checkout separately calculates the NGN amount using the configured USD/NGN rate. Keep those values in sync when changing pricing. The dashboard's example project metrics are illustrative UI content, not live customer data.
